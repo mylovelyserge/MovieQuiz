@@ -101,7 +101,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             if self.currentQuestionIndex == self.questionsAmount - 1 {
-                // ✅ Сохраняем СРАЗУ после ответа на последний вопрос
                 self.statisticService.store(correct: self.correctAnswers, total: self.questionsAmount)
             }
             self.showNewQuestionOrResult()
