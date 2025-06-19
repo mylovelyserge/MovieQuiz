@@ -20,6 +20,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        imageView.layer.cornerRadius = 20
         
         if let factory = questionFactory as? QuestionFactory {
             factory.delegate = self
@@ -88,20 +89,25 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     private func showAnswerResult(isCorrect: Bool) {
         isButtonsEnabled = false
-        
+
         if isCorrect {
             correctAnswers += 1
         }
-        
-        imageView.layer.borderColor = isCorrect ? UIColor.green.cgColor : UIColor.red.cgColor
+
+        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         imageView.layer.borderWidth = 8
         imageView.layer.cornerRadius = 20
         imageView.layer.masksToBounds = true
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            if self.currentQuestionIndex == self.questionsAmount - 1 {
+                // ✅ Сохраняем СРАЗУ после ответа на последний вопрос
+                self.statisticService.store(correct: self.correctAnswers, total: self.questionsAmount)
+            }
             self.showNewQuestionOrResult()
         }
     }
+
     
     private func showNewQuestionOrResult() {
         if currentQuestionIndex == questionsAmount - 1 {
