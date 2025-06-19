@@ -46,6 +46,8 @@ final class StatisticServiceImplementation: StatisticServiceProtocol {
     }
 
     func store(correct count: Int, total amount: Int) {
+        guard amount > 0 else { return }
+
         gamesCount += 1
 
         let current = GameResult(correct: count, total: amount, date: Date())

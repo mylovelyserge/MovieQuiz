@@ -110,7 +110,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     private func showNewQuestionOrResult() {
         if currentQuestionIndex == questionsAmount - 1 {
-            statisticService.store(correct: correctAnswers, total: questionsAmount)
             
             let best = statisticService.bestGame
             let accuracy = String(format: "%.2f", statisticService.totalAccuracy)
