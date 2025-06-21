@@ -8,6 +8,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
     private var isButtonsEnabled = true
+    private let statisticService: StatisticServiceProtocol = StatisticServiceImplementation()
+    
+    private var alertPresenter = AlertPresenter()
     
     @IBOutlet private var imageView: UIImageView!
     @IBOutlet private var textLabel: UILabel!
@@ -17,6 +20,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        imageView.layer.cornerRadius = 20
         
         if let factory = questionFactory as? QuestionFactory {
             factory.delegate = self
@@ -68,40 +72,74 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         self.present(alert, animated: true, completion: nil)
     }
     
+    private func showAlert(result: QuizResultsViewModel) {
+            let alertModel = AlertModel(
+                title: result.title,
+                message: result.text,
+                buttonText: result.buttonText,
+                completion: { [weak self] in
+                    guard let self = self else { return }
+                    self.currentQuestionIndex = 0
+                    self.correctAnswers = 0
+                    self.questionFactory.requestNextQuestion()
+                }
+            )
+            alertPresenter.show(alertModel: alertModel, on: self)
+    }
+    
     private func showAnswerResult(isCorrect: Bool) {
         isButtonsEnabled = false
-        
+
         if isCorrect {
             correctAnswers += 1
         }
-        
-        imageView.layer.borderColor = isCorrect ? UIColor.green.cgColor : UIColor.red.cgColor
+
+        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         imageView.layer.borderWidth = 8
         imageView.layer.cornerRadius = 20
         imageView.layer.masksToBounds = true
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            if self.currentQuestionIndex == self.questionsAmount - 1 {
+                self.statisticService.store(correct: self.correctAnswers, total: self.questionsAmount)
+            }
             self.showNewQuestionOrResult()
         }
     }
+
     
     private func showNewQuestionOrResult() {
         if currentQuestionIndex == questionsAmount - 1 {
-            let text = correctAnswers == questionsAmount ?
-                "Поздравляем, вы ответили на 10 из 10!" :
-                "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
             
+            let best = statisticService.bestGame
+            let accuracy = String(format: "%.2f", statisticService.totalAccuracy)
+
+            let message = """
+            Ваш результат: \(correctAnswers)/\(questionsAmount)
+            Кол-во сыгранных квизов: \(statisticService.gamesCount)
+            Рекорд: \(best.correct)/\(best.total) (\(format(date: best.date)))
+            Средняя точность: \(accuracy)%
+            """
+
             let viewModel = QuizResultsViewModel(
                 title: "Этот раунд окончен!",
-                text: text,
+                text: message,
                 buttonText: "Сыграть ещё раз"
             )
-            show(quiz: viewModel)
+
+            showAlert(result: viewModel)
         } else {
             currentQuestionIndex += 1
             questionFactory.requestNextQuestion()
         }
     }
+    
+    private func format(date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy HH:mm"
+        return formatter.string(from: date)
+    }
+
     
     // MARK: - QuestionFactoryDelegate
     
